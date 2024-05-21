@@ -25,7 +25,28 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    const database = client.db("DiscyDB")
+    // collections
+    const userCollection = database.collection("users")
     
+    // user related apis
+    app.get('/users' , async (req,res)=>{
+        const result = await userCollection.find().toArray();
+        res.send(result)
+    })
+
+    app.post('/users', async(req,res)=>{
+        const requestedInfo = req.body;
+        // checking if user already exist
+        const {email} = requestedInfo
+        const existingUser = await userCollection.findOne({email : email})
+        if(existingUser){
+            return res.send({message : "User already Exits"})
+        }
+        const result = await userCollection.insertOne(requestedInfo)
+        res.send(result)
+    })
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
