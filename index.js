@@ -121,6 +121,22 @@ async function run() {
       res.send(result);
     });
 
+    // load queries based on email
+    app.get("/queries/myQueries", async(req,res)=>{
+      let query = {}
+      if(req.query?.email){
+        query = {userEmail : req.query?.email}
+      }else{
+        return res.send({message: "no data"})
+      }
+      const options = {
+        sort: {
+          _id: -1,
+        }
+      };
+      const result = await queriesCollection.find(query,options).toArray()
+      res.send(result)
+    })
     // load limited queries for home
     app.get("/limitedQueries", async (req, res) => {
       const options = {
