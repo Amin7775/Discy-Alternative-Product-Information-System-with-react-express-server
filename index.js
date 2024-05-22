@@ -110,8 +110,15 @@ async function run() {
     // increment related apis - end
 
     // query related api - start
+
     app.get("/queries", async (req, res) => {
-      const result = await queriesCollection.find().toArray();
+      const searchTerm = req.query.search || "";
+      const query = {
+        productName: { $regex: searchTerm, $options: "i" },
+      }
+      const result = await queriesCollection
+        .find(query)
+        .toArray();
       res.send(result);
     });
 
@@ -122,21 +129,21 @@ async function run() {
     });
 
     // load queries based on email
-    app.get("/queries/myQueries", async(req,res)=>{
-      let query = {}
-      if(req.query?.email){
-        query = {userEmail : req.query?.email}
-      }else{
-        return res.send({message: "no data"})
+    app.get("/queries/myQueries", async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { userEmail: req.query?.email };
+      } else {
+        return res.send({ message: "no data" });
       }
       const options = {
         sort: {
           _id: -1,
-        }
+        },
       };
-      const result = await queriesCollection.find(query,options).toArray()
-      res.send(result)
-    })
+      const result = await queriesCollection.find(query, options).toArray();
+      res.send(result);
+    });
     // load limited queries for home
     app.get("/limitedQueries", async (req, res) => {
       const options = {
@@ -158,39 +165,45 @@ async function run() {
     });
 
     // update queries
-    app.patch("/queries/update/:id", async(req,res)=>{
+    app.patch("/queries/update/:id", async (req, res) => {
       const id = req.params.id;
       const requestedInfo = req.body;
-      const {productName,
+      const {
+        productName,
         productBrand,
         productImage,
         queryTitle,
-        boycottingReason,} = requestedInfo
-      
-      const query = {_id : new ObjectId(id)}
+        boycottingReason,
+      } = requestedInfo;
+
+      const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
-      console.log(requestedInfo)
+      console.log(requestedInfo);
       const updateDoc = {
         $set: {
-          productName : productName,
-          productBrand : productBrand,
-          productImage : productImage,
-          queryTitle : queryTitle,
-          boycottingReason: boycottingReason
+          productName: productName,
+          productBrand: productBrand,
+          productImage: productImage,
+          queryTitle: queryTitle,
+          boycottingReason: boycottingReason,
         },
       };
-      const result = await queriesCollection.updateOne(query, updateDoc, options)
-      res.send(result)
-    })
+      const result = await queriesCollection.updateOne(
+        query,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
 
     // delete
     // update queries
-    app.delete("/queries/delete/:id", async(req,res)=>{
+    app.delete("/queries/delete/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id : new ObjectId(id)}
-      const result = await queriesCollection.deleteOne(query)
-      res.send(result)
-    })
+      const query = { _id: new ObjectId(id) };
+      const result = await queriesCollection.deleteOne(query);
+      res.send(result);
+    });
     // query related api - end
 
     // Recommendation related api - start
@@ -206,12 +219,12 @@ async function run() {
     });
 
     // load based on product id
-    app.get("/recommendations/:productID" , async(req,res)=>{
-      const params = req.params
-      const query = {queryID : params.productID}
-      const result = await recommendationsCollection.find(query).toArray()
-      res.send(result)
-    })
+    app.get("/recommendations/:productID", async (req, res) => {
+      const params = req.params;
+      const query = { queryID: params.productID };
+      const result = await recommendationsCollection.find(query).toArray();
+      res.send(result);
+    });
     // Recommendation related api - end
 
     console.log(
