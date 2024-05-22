@@ -182,6 +182,15 @@ async function run() {
       const result = await queriesCollection.updateOne(query, updateDoc, options)
       res.send(result)
     })
+
+    // delete
+    // update queries
+    app.delete("/queries/delete/:id", async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)}
+      const result = await queriesCollection.deleteOne(query)
+      res.send(result)
+    })
     // query related api - end
 
     // Recommendation related api - start
