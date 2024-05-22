@@ -115,10 +115,8 @@ async function run() {
       const searchTerm = req.query.search || "";
       const query = {
         productName: { $regex: searchTerm, $options: "i" },
-      }
-      const result = await queriesCollection
-        .find(query)
-        .toArray();
+      };
+      const result = await queriesCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -208,7 +206,15 @@ async function run() {
 
     // Recommendation related api - start
     app.get("/recommendations", async (req, res) => {
-      const result = await recommendationsCollection.find().toArray();
+      console.log("hitted");
+      // const userEmailData = req.query
+      let query = {};
+      if (req.query?.email) {
+        query = { queryUserEmail: req.query?.email };
+      }
+      // console.log(query,userEmailData)
+
+      const result = await recommendationsCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -225,6 +231,25 @@ async function run() {
       const result = await recommendationsCollection.find(query).toArray();
       res.send(result);
     });
+
+    // load based on email
+    // app.get("/recommendations/forMe", async(req,res)=>{
+    //   console.log("hitted")
+    //   let query = {};
+    //   if (req.query?.email) {
+    //     query = { queryUserEmail: req.query?.email };
+    //   } else {
+    //     return res.send({ message: "no data" });
+    //   }
+    //   const result = await recommendationsCollection.find(query).toArray()
+    //   console.log(query)
+    //   res.send(result)
+    // })
+    // app.get("/recommendations/d", async (req, res) => {
+    //   console.log("hitted")
+    //   const result = await recommendationsCollection.find().toArray();
+    //   res.send(result);
+    // });
     // Recommendation related api - end
 
     console.log(
