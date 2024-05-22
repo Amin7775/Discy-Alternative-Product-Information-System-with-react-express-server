@@ -36,6 +36,17 @@ async function run() {
         res.send(result)
     })
 
+    // load single user information
+    app.get('/user/queryUser', async(req, res) => {
+      let query = {}; 
+      console.log(req.query);
+      if (req.query?.email) {
+        query = { email: req.query?.email };
+      }
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+
     app.post('/users', async(req,res)=>{
         const requestedInfo = req.body;
         // checking if user already exist
