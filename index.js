@@ -28,6 +28,7 @@ async function run() {
     const database = client.db("DiscyDB")
     // collections
     const userCollection = database.collection("users")
+    const queriesCollection = database.collection("queries")
     
     // user related apis
     app.get('/users' , async (req,res)=>{
@@ -45,6 +46,31 @@ async function run() {
         }
         const result = await userCollection.insertOne(requestedInfo)
         res.send(result)
+    })
+
+    // query related api
+    app.get('/queries', async(req,res)=>{
+        const result = await queriesCollection.find().toArray()
+        res.send(result)
+    })  
+
+    app.post('/queries' , async(req,res)=>{
+        const newQuery = req.body;
+        const result = await queriesCollection.insertOne(newQuery)
+        res.send(result)
+    })
+
+    // load limited queries for home
+    app.get('/limitedQueries' , async(req,res)=>{
+      const options = {
+        sort: {
+          _id : -1
+        },
+        limit : 3
+      }
+      const result = await queriesCollection.find({},options).toArray()
+      console.log(result)
+      res.send(result)
     })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
