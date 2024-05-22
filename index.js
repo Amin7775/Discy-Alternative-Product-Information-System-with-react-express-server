@@ -153,6 +153,14 @@ async function run() {
       const result = await recommendationsCollection.insertOne(info);
       res.send(result);
     });
+
+    // load based on product id
+    app.get("/recommendations/:productID" , async(req,res)=>{
+      const params = req.params
+      const query = {queryID : params.productID}
+      const result = await recommendationsCollection.find(query).toArray()
+      res.send(result)
+    })
     // Recommendation related api - end
 
     console.log(
