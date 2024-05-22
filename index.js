@@ -156,6 +156,32 @@ async function run() {
       const result = await queriesCollection.findOne(query);
       res.send(result);
     });
+
+    // update queries
+    app.patch("/queries/update/:id", async(req,res)=>{
+      const id = req.params.id;
+      const requestedInfo = req.body;
+      const {productName,
+        productBrand,
+        productImage,
+        queryTitle,
+        boycottingReason,} = requestedInfo
+      
+      const query = {_id : new ObjectId(id)}
+      const options = { upsert: true };
+      console.log(requestedInfo)
+      const updateDoc = {
+        $set: {
+          productName : productName,
+          productBrand : productBrand,
+          productImage : productImage,
+          queryTitle : queryTitle,
+          boycottingReason: boycottingReason
+        },
+      };
+      const result = await queriesCollection.updateOne(query, updateDoc, options)
+      res.send(result)
+    })
     // query related api - end
 
     // Recommendation related api - start
