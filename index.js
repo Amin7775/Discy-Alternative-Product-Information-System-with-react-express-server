@@ -93,16 +93,18 @@ async function run() {
     // query recommendations increment -> to count how many users recommended
     app.patch("/queries", async (req, res) => {
       const requestedInfo = req.body;
-      // checking if user exist
-      const { email } = requestedInfo;
-      // operations
-      const filter = { email: email };
+      const { Qid } = requestedInfo;
+      const filter = { _id: new ObjectId(Qid) };
       const options = { upsert: true };
       const updateDoc = {
         $inc: { recommendationCount: 1 },
       };
       // update
-      const result = await queriesCollection.updateOne(filter, updateDoc, options);
+      const result = await queriesCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
       res.send(result);
     });
     // increment related apis - end
