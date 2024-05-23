@@ -3,9 +3,15 @@ const app = express();
 const cors = require("cors");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
 // middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true
+  })
+);
 app.use(express.json());
 
 // mongodb-start
@@ -210,7 +216,7 @@ async function run() {
         sort: {
           _id: -1,
         },
-        limit: 3,
+        limit: 6,
       };
       const result = await queriesCollection.find({}, options).toArray();
       // console.log(result)
@@ -238,7 +244,7 @@ async function run() {
 
       const query = { _id: new ObjectId(id) };
       const options = { upsert: true };
-      console.log(requestedInfo);
+      // console.log(requestedInfo);
       const updateDoc = {
         $set: {
           productName: productName,
@@ -307,25 +313,24 @@ async function run() {
       res.send(result);
     });
 
-    // load based on email
-    // app.get("/recommendations/forMe", async(req,res)=>{
-    //   console.log("hitted")
-    //   let query = {};
-    //   if (req.query?.email) {
-    //     query = { queryUserEmail: req.query?.email };
-    //   } else {
-    //     return res.send({ message: "no data" });
-    //   }
-    //   const result = await recommendationsCollection.find(query).toArray()
-    //   console.log(query)
-    //   res.send(result)
-    // })
-    // app.get("/recommendations/d", async (req, res) => {
-    //   console.log("hitted")
-    //   const result = await recommendationsCollection.find().toArray();
-    //   res.send(result);
-    // });
     // Recommendation related api - end
+
+    // jwt related apis- start
+    app.post('/jwt',async(req,res)=>{
+      const user = req.body;
+      const token = jwt.sign(user,process.env.Access_Token_Secret,{expiresIn: '2h'})
+      res
+      .cookie("token",token,{httpOnly:true,secure:true,sameSite:'none'})
+      .send({success : true})
+    })
+    // clear cookie when logout
+    app.post('/logout',async(req,res)=>{
+      const user = req.body;
+      res
+      .clearCookie('token',{maxAge: 0})
+      .send({success: true})
+    })
+    // jwt related apis- end
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
