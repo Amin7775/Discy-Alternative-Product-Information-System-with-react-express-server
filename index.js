@@ -152,6 +152,23 @@ async function run() {
       );
       res.send(result);
     });
+    // query recommendations decrement -> to count how many users recommended
+    app.patch("/queries/decrement", async (req, res) => {
+      const requestedInfo = req.body;
+      const { Qid } = requestedInfo;
+      const filter = { _id: new ObjectId(Qid) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $inc: { recommendationCount: -1 },
+      };
+      // update
+      const result = await queriesCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
     // increment related apis - end
 
     // query related api - start
@@ -251,13 +268,19 @@ async function run() {
 
     // Recommendation related api - start
     app.get("/recommendations", async (req, res) => {
-      // console.log("hitted");
-      // const userEmailData = req.query
       let query = {};
       if (req.query?.email) {
         query = { queryUserEmail: req.query?.email };
       }
-      // console.log(query,userEmailData)
+      const result = await recommendationsCollection.find(query).toArray();
+      res.send(result);
+    });
+    // my recommendation
+    app.get("/recommendations/myRecommendations", async (req, res) => {
+      let query = {};
+      if (req.query?.email) {
+        query = { recommenderEmail: req.query?.email };
+      }
       const result = await recommendationsCollection.find(query).toArray();
       res.send(result);
     });
@@ -265,6 +288,14 @@ async function run() {
     app.post("/recommendations", async (req, res) => {
       const info = req.body;
       const result = await recommendationsCollection.insertOne(info);
+      res.send(result);
+    });
+
+    // delete recommendations
+    app.delete("/recommendations/delete/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await recommendationsCollection.deleteOne(query);
       res.send(result);
     });
 
