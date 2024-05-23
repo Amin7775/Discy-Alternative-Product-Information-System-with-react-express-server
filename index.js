@@ -58,6 +58,28 @@ async function run() {
       const result = await userCollection.insertOne(requestedInfo);
       res.send(result);
     });
+
+    // user stats calculate
+    app.get("/users/stats" , async(req,res)=>{
+      // aggregate for doing calculations 
+      const stats = await userCollection.aggregate([{
+        $group:{
+          _id: null, 
+          totalNumberOfUsers : {$sum : 1},
+          totalNumberOfQueries : {$sum : "$totalQueries"},
+          totalNumberOfRecommendations : {$sum : "$totalRecommendations"},
+        }
+      }]).toArray()
+
+      // in case stats is empty or no result found
+      const [result] = stats.length !== 0 ? stats : [{ 
+        totalNumberOfUsers: 0, 
+        totalNumberOfQueries: 0, 
+        totalNumberOfRecommendations: 0 
+      }];
+
+      res.send(result)
+    })
     // user related api end
 
     // increment related apis - start
@@ -206,14 +228,13 @@ async function run() {
 
     // Recommendation related api - start
     app.get("/recommendations", async (req, res) => {
-      console.log("hitted");
+      // console.log("hitted");
       // const userEmailData = req.query
       let query = {};
       if (req.query?.email) {
         query = { queryUserEmail: req.query?.email };
       }
       // console.log(query,userEmailData)
-
       const result = await recommendationsCollection.find(query).toArray();
       res.send(result);
     });
