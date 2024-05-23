@@ -4,6 +4,7 @@ const cors = require("cors");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
+const cookieParser = require('cookie-parser')
 
 // middleware
 app.use(
@@ -13,6 +14,23 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(cookieParser())
+
+// custom middleware
+const verifyToken= (req,res,next)=>{
+  const token = req?.cookies?.token
+  // console.log(token)
+  if(!token){
+    return res.status(401).send({message:"unauthorized access"})
+  }
+  jwt.verify(token,process.env.Access_Token_Secret,(err,decoded)=>{
+    if(err){
+      return res.status(401).send({message:"unauthorized access"})
+    }
+    req.user = decoded
+    next()
+  })
+}
 
 // mongodb-start
 
@@ -194,8 +212,13 @@ async function run() {
       res.send(result);
     });
 
-    // load queries based on email
-    app.get("/queries/myQueries", async (req, res) => {
+    // load queries based on email -- applied jwt
+    app.get("/queries/myQueries",verifyToken, async (req, res) => {
+      // jwt related
+      if(req?.user?.email !== req?.query?.email){
+        return res.status(403).send({message:'forbidden access'})
+      }
+      // console.log(req.cookies)
       let query = {};
       if (req.query?.email) {
         query = { userEmail: req.query?.email };
@@ -273,7 +296,12 @@ async function run() {
     // query related api - end
 
     // Recommendation related api - start
-    app.get("/recommendations", async (req, res) => {
+    // jwt applied on this route
+    app.get("/recommendations",verifyToken, async (req, res) => {
+      // jwt related
+      if(req?.user?.email !== req?.query?.email){
+        return res.status(403).send({message:'forbidden access'})
+      }
       let query = {};
       if (req.query?.email) {
         query = { queryUserEmail: req.query?.email };
@@ -281,8 +309,12 @@ async function run() {
       const result = await recommendationsCollection.find(query).toArray();
       res.send(result);
     });
-    // my recommendation
-    app.get("/recommendations/myRecommendations", async (req, res) => {
+    // my recommendation - jwt applied
+    app.get("/recommendations/myRecommendations",verifyToken, async (req, res) => {
+      // jwt related
+      if(req?.user?.email !== req?.query?.email){
+        return res.status(403).send({message:'forbidden access'})
+      }
       let query = {};
       if (req.query?.email) {
         query = { recommenderEmail: req.query?.email };
