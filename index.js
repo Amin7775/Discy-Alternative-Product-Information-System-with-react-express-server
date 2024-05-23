@@ -4,33 +4,37 @@ const cors = require("cors");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
-const cookieParser = require('cookie-parser')
+const cookieParser = require("cookie-parser");
 
 // middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
-    credentials: true
+    origin: [
+      "http://localhost:5173",
+      "https://discy-b9-a11.web.app",
+      "https://discy-b9-a11.firebaseapp.com",
+    ],
+    credentials: true,
   })
 );
 app.use(express.json());
-app.use(cookieParser())
+app.use(cookieParser());
 
 // custom middleware
-const verifyToken= (req,res,next)=>{
-  const token = req?.cookies?.token
+const verifyToken = (req, res, next) => {
+  const token = req?.cookies?.token;
   // console.log(token)
-  if(!token){
-    return res.status(401).send({message:"unauthorized access"})
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" });
   }
-  jwt.verify(token,process.env.Access_Token_Secret,(err,decoded)=>{
-    if(err){
-      return res.status(401).send({message:"unauthorized access"})
+  jwt.verify(token, process.env.Access_Token_Secret, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "unauthorized access" });
     }
-    req.user = decoded
-    next()
-  })
-}
+    req.user = decoded;
+    next();
+  });
+};
 
 // mongodb-start
 
@@ -84,49 +88,58 @@ async function run() {
     });
 
     // user stats calculate
-    app.get("/users/stats" , async(req,res)=>{
-      // aggregate for doing calculations 
-      const stats = await userCollection.aggregate([{
-        $group:{
-          _id: null, 
-          totalNumberOfUsers : {$sum : 1},
-          totalNumberOfQueries : {$sum : "$totalQueries"},
-          totalNumberOfRecommendations : {$sum : "$totalRecommendations"},
-        }
-      }]).toArray()
+    app.get("/users/stats", async (req, res) => {
+      // aggregate for doing calculations
+      const stats = await userCollection
+        .aggregate([
+          {
+            $group: {
+              _id: null,
+              totalNumberOfUsers: { $sum: 1 },
+              totalNumberOfQueries: { $sum: "$totalQueries" },
+              totalNumberOfRecommendations: { $sum: "$totalRecommendations" },
+            },
+          },
+        ])
+        .toArray();
 
       // in case stats is empty or no result found
-      const [result] = stats.length !== 0 ? stats : [{ 
-        totalNumberOfUsers: 0, 
-        totalNumberOfQueries: 0, 
-        totalNumberOfRecommendations: 0 
-      }];
+      const [result] =
+        stats.length !== 0
+          ? stats
+          : [
+              {
+                totalNumberOfUsers: 0,
+                totalNumberOfQueries: 0,
+                totalNumberOfRecommendations: 0,
+              },
+            ];
 
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     // sort users based on totalQueries
-    app.get("/users/sortQuery", async(req,res)=>{
+    app.get("/users/sortQuery", async (req, res) => {
       const options = {
-        sort : {
-          totalQueries : -1,
+        sort: {
+          totalQueries: -1,
         },
-        limit : 5,
+        limit: 5,
       };
-      const result = await userCollection.find({},options).toArray()
-      res.send(result)
-    })
+      const result = await userCollection.find({}, options).toArray();
+      res.send(result);
+    });
     // sort users based on total recommendations
-    app.get("/users/sortRecommendations", async(req,res)=>{
+    app.get("/users/sortRecommendations", async (req, res) => {
       const options = {
-        sort : {
-          totalRecommendations : -1
+        sort: {
+          totalRecommendations: -1,
         },
-        limit : 5
-      }
-      const result = await userCollection.find({},options).toArray()
-      res.send(result)
-    })
+        limit: 5,
+      };
+      const result = await userCollection.find({}, options).toArray();
+      res.send(result);
+    });
     // user related api end
 
     // increment related apis - start
@@ -213,10 +226,10 @@ async function run() {
     });
 
     // load queries based on email -- applied jwt
-    app.get("/queries/myQueries",verifyToken, async (req, res) => {
+    app.get("/queries/myQueries", verifyToken, async (req, res) => {
       // jwt related
-      if(req?.user?.email !== req?.query?.email){
-        return res.status(403).send({message:'forbidden access'})
+      if (req?.user?.email !== req?.query?.email) {
+        return res.status(403).send({ message: "forbidden access" });
       }
       // console.log(req.cookies)
       let query = {};
@@ -297,10 +310,10 @@ async function run() {
 
     // Recommendation related api - start
     // jwt applied on this route
-    app.get("/recommendations",verifyToken, async (req, res) => {
+    app.get("/recommendations", verifyToken, async (req, res) => {
       // jwt related
-      if(req?.user?.email !== req?.query?.email){
-        return res.status(403).send({message:'forbidden access'})
+      if (req?.user?.email !== req?.query?.email) {
+        return res.status(403).send({ message: "forbidden access" });
       }
       let query = {};
       if (req.query?.email) {
@@ -310,18 +323,22 @@ async function run() {
       res.send(result);
     });
     // my recommendation - jwt applied
-    app.get("/recommendations/myRecommendations",verifyToken, async (req, res) => {
-      // jwt related
-      if(req?.user?.email !== req?.query?.email){
-        return res.status(403).send({message:'forbidden access'})
+    app.get(
+      "/recommendations/myRecommendations",
+      verifyToken,
+      async (req, res) => {
+        // jwt related
+        if (req?.user?.email !== req?.query?.email) {
+          return res.status(403).send({ message: "forbidden access" });
+        }
+        let query = {};
+        if (req.query?.email) {
+          query = { recommenderEmail: req.query?.email };
+        }
+        const result = await recommendationsCollection.find(query).toArray();
+        res.send(result);
       }
-      let query = {};
-      if (req.query?.email) {
-        query = { recommenderEmail: req.query?.email };
-      }
-      const result = await recommendationsCollection.find(query).toArray();
-      res.send(result);
-    });
+    );
 
     app.post("/recommendations", async (req, res) => {
       const info = req.body;
@@ -348,29 +365,31 @@ async function run() {
     // Recommendation related api - end
 
     // jwt related apis- start
-    app.post('/jwt',async(req,res)=>{
+    app.post("/jwt", async (req, res) => {
       const user = req.body;
-      const token = jwt.sign(user,process.env.Access_Token_Secret,{expiresIn: '2h'})
+      const token = jwt.sign(user, process.env.Access_Token_Secret, {
+        expiresIn: "2h",
+      });
       res
-      .cookie("token",token,{
-        httpOnly: true,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-        secure: process.env.NODE_ENV === 'production' ? true : false,
-      })
-      .send({success : true})
-    })
+        .cookie("token", token, {
+          httpOnly: true,
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+          secure: process.env.NODE_ENV === "production" ? true : false,
+        })
+        .send({ success: true });
+    });
     // clear cookie when logout
-    app.post('/logout',async(req,res)=>{
+    app.post("/logout", async (req, res) => {
       const user = req.body;
       res
-      .clearCookie('token',{
-        httpOnly: true,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-        secure: process.env.NODE_ENV === 'production' ? true : false,
-        maxAge: 0}
-      )
-      .send({success: true})
-    })
+        .clearCookie("token", {
+          httpOnly: true,
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+          secure: process.env.NODE_ENV === "production" ? true : false,
+          maxAge: 0,
+        })
+        .send({ success: true });
+    });
     // jwt related apis- end
 
     console.log(
