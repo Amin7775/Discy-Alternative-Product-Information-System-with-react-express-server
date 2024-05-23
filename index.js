@@ -352,14 +352,23 @@ async function run() {
       const user = req.body;
       const token = jwt.sign(user,process.env.Access_Token_Secret,{expiresIn: '2h'})
       res
-      .cookie("token",token,{httpOnly:true,secure:true,sameSite:'none'})
+      .cookie("token",token,{
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+        secure: process.env.NODE_ENV === 'production' ? true : false,
+      })
       .send({success : true})
     })
     // clear cookie when logout
     app.post('/logout',async(req,res)=>{
       const user = req.body;
       res
-      .clearCookie('token',{maxAge: 0})
+      .clearCookie('token',{
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+        secure: process.env.NODE_ENV === 'production' ? true : false,
+        maxAge: 0}
+      )
       .send({success: true})
     })
     // jwt related apis- end
