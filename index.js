@@ -80,6 +80,29 @@ async function run() {
 
       res.send(result)
     })
+
+    // sort users based on totalQueries
+    app.get("/users/sortQuery", async(req,res)=>{
+      const options = {
+        sort : {
+          totalQueries : -1,
+        },
+        limit : 5,
+      };
+      const result = await userCollection.find({},options).toArray()
+      res.send(result)
+    })
+    // sort users based on total recommendations
+    app.get("/users/sortRecommendations", async(req,res)=>{
+      const options = {
+        sort : {
+          totalRecommendations : -1
+        },
+        limit : 5
+      }
+      const result = await userCollection.find({},options).toArray()
+      res.send(result)
+    })
     // user related api end
 
     // increment related apis - start
